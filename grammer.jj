@@ -1,0 +1,178 @@
+/**
+ * MiniJava parser.
+ */
+PARSER_BEGIN(MiniJavaParser)
+
+public class MiniJavaParser {
+  public static void main(String args[]) throws ParseException {
+    MiniJavaParser parser = new MiniJavaParser(System.in);
+    parser.Program();
+  }
+}
+
+PARSER_END(MiniJavaParser)
+
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+}
+
+TOKEN :
+{
+//keywords
+  <CLASS: "class">
+| <PUBLIC: "public">
+| <STATIC: "static">
+| <VOID: "void">
+| <MAIN: "main">
+| <STRING: "String">
+| <EXTENDS: "extends">
+| <RETURN: "return">
+| <INT: "int">
+| <BOOLEAN: "boolean">
+| <IF: "if">
+| <WHILE: "while">
+| <SYSTEMOUTPRINTLN: "System.out.println">
+| <ELSE: "else">
+| <LENGTH: "length">
+| <TRUE: "true">
+| <FALSE: "false">
+| <THIS: "this">
+| <NEW: "new">
+}
+
+TOKEN :
+{
+//punctuation and ops
+  <LBRACE: "{">
+| <RBRACE: "}">
+| <LBRACKET: "[">
+| <RBRACKET: "]">
+| <DOT: ".">
+| <NOT: "!">
+| <LPAREN: "(">
+| <RPAREN: ")">
+| <SEMI: ";">
+| <COMMA: ",">
+| <PLUS: "+">
+| <ASSIGN: "=">
+| <MINUS: "-">
+| <TIMES: "*">
+| <AND: "&&">
+| <LT: "<">
+}
+
+TOKEN :
+{
+// literals and ids
+  <INTEGER_LITERAL: (["0"-"9"])+>
+| <ID: ["a"-"z","A"-"Z","_"] ( ["a"-"z","A"-"Z","_","0"-"9"] )* >
+}
+
+
+void Program() :
+{}
+{
+  MainClass() ( ClassDecl() )* <EOF>
+}
+
+void MainClass() :
+{}
+{
+  <CLASS> <ID> <LBRACE>
+    <PUBLIC> <STATIC> <VOID> <MAIN> <LPAREN> <STRING> <LBRACKET> <RBRACKET> <ID> <RPAREN>
+    <LBRACE> Statement() <RBRACE>
+  <RBRACE>
+}
+
+void ClassDecl() :
+{}
+{
+  <CLASS> <ID> ( <EXTENDS> <ID> )? <LBRACE>
+    ( VarDecl() )*
+    ( MethodDecl() )*
+  <RBRACE>
+}
+
+void VarDecl() :
+{}
+{
+  Type() <ID> <SEMI>
+}
+
+void MethodDecl() :
+{}
+{
+  <PUBLIC> Type() <ID> <LPAREN> FormalList() <RPAREN> <LBRACE>
+    ( VarDecl() )*
+    ( Statement() )*
+    <RETURN> Exp() <SEMI>
+  <RBRACE>
+}
+
+void FormalList() :
+{}
+{
+  ( Type() <ID> ( <COMMA> Type() <ID> )* )?
+}
+
+void Type() :
+{}
+{
+  <INT> ( <LBRACKET> <RBRACKET> )?
+| <BOOLEAN>
+| <ID>
+}
+
+void Statement() :
+{}
+{
+  <LBRACE> ( Statement() )* <RBRACE>
+| <IF> <LPAREN> Exp() <RPAREN> Statement() <ELSE> Statement()
+| <WHILE> <LPAREN> Exp() <RPAREN> Statement()
+| <SYSTEMOUTPRINTLN> <LPAREN> Exp() <RPAREN> <SEMI>
+| <ID>
+    ( <ASSIGN> Exp() <SEMI>
+    | <LBRACKET> Exp() <RBRACKET> <ASSIGN> Exp() <SEMI>
+    )
+}
+
+void Exp() :
+{}
+{
+  Exp1() ( ( <AND> | <LT> | <PLUS> | <MINUS> | <TIMES> ) Exp1() )*
+}
+
+void Exp1() :
+{}
+{
+  PrimaryExp()
+  ( <LBRACKET> Exp() <RBRACKET>
+  | LOOKAHEAD(2) <DOT> <LENGTH>
+  | <DOT> <ID> <LPAREN> ExpList() <RPAREN>
+  )*
+}
+
+void PrimaryExp() :
+{}
+{
+  <INTEGER_LITERAL>
+| <TRUE>
+| <FALSE>
+| <ID>
+| <THIS>
+| LOOKAHEAD(2) <NEW> <INT> <LBRACKET> Exp() <RBRACKET>
+| <NEW> <ID> <LPAREN> <RPAREN>
+| <NOT> Exp()
+| <LPAREN> Exp() <RPAREN>
+}
+
+void ExpList() :
+{}
+{
+  Exp() ( <COMMA> Exp() )*
+}
